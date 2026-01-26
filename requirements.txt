@@ -1,0 +1,10 @@
+typer[all]
+google-genai
+pydantic
+pandas
+openpyxl
+pillow
+opencv-python
+python-dotenv
+pyyaml
+tqdm
