@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "terminal_coworker"
+version = "0.1.0"
+description = "AI Accountant for your Terminal"
+requires-python = ">=3.10"
+dependencies = [
+    "typer[all]",
+    "google-genai",
+    "pydantic",
+    "pandas",
+    "openpyxl",
+    "pillow",
+    "opencv-python",
+    "python-dotenv",
+    "pyyaml",
+    "tqdm"
+]
+
+[project.scripts]
+optisystemize = "terminal_coworker.main:app"
+
+# --- ИСПРАВЛЕНИЕ: Явно указываем, где лежит код ---
+[tool.setuptools]
+packages = ["terminal_coworker"]

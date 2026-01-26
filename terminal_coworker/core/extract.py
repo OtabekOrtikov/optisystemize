@@ -1,7 +1,8 @@
 import json
 import os
+import time
+import random
 from pathlib import Path
-from datetime import datetime
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -34,7 +35,6 @@ def extract_data(file_path: Path, file_hash: str, project_path: Path, force: boo
     # Determine file type
     suffix = file_path.suffix.lower()
     if suffix not in ['.jpg', '.jpeg', '.png', '.webp', '.pdf']:
-        # Skip non-visual files for now or implement text parsers
         return None
 
     # Init Client
@@ -54,26 +54,39 @@ def extract_data(file_path: Path, file_hash: str, project_path: Path, force: boo
     if not inputs:
         return None
 
-    # Call Gemini
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash", # Or gemini-1.5-flash
-            contents=inputs,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
-                response_mime_type="application/json",
-                response_schema=ExtractedDoc
-            )
-        )
-        
-        extracted_data = response.parsed # Pydantic object
-        
-        # Save to Cache
-        with open(cache_path, "w", encoding="utf-8") as f:
-            f.write(extracted_data.model_dump_json(indent=2))
-            
-        return extracted_data
+    # --- RETRY LOGIC for 429 Errors ---
+    max_retries = 3
+    base_delay = 2 # seconds
 
-    except Exception as e:
-        print(f"Error extracting {file_path.name}: {e}")
-        return None
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=inputs,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    response_schema=ExtractedDoc
+                )
+            )
+            
+            extracted_data = response.parsed
+            
+            # Save to Cache
+            with open(cache_path, "w", encoding="utf-8") as f:
+                f.write(extracted_data.model_dump_json(indent=2))
+                
+            return extracted_data
+
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                sleep_time = base_delay * (2 ** attempt) + random.uniform(0, 1) # Exponential backoff
+                print(f"Rate limit hit for {file_path.name}. Retrying in {sleep_time:.1f}s... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(sleep_time)
+            else:
+                print(f"Error extracting {file_path.name}: {e}")
+                return None
+    
+    print(f"Failed to extract {file_path.name} after {max_retries} attempts.")
+    return None
