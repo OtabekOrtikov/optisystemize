@@ -1,0 +1,12 @@
+{
+  "doc_type": "receipt",
+  "doc_date": "2018-10-19",
+  "merchant": "INDAH GIFT & HOME DECO",
+  "total_amount": 60.3,
+  "currency": "RM",
+  "payment_method": "cash",
+  "notes": null,
+  "confidence": 0.9,
+  "uncertain_fields": [],
+  "language_hint": null
+}

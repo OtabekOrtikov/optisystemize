@@ -1,0 +1,12 @@
+{
+  "doc_type": "receipt",
+  "doc_date": "2019-09-01",
+  "merchant": "ABC HO TRADING",
+  "total_amount": 31.0,
+  "currency": "RM",
+  "payment_method": null,
+  "notes": "*Goods Sold are non-refundable***",
+  "confidence": 0.9,
+  "uncertain_fields": [],
+  "language_hint": null
+}

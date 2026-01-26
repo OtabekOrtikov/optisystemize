@@ -1,0 +1,12 @@
+{
+  "doc_type": "invoice",
+  "doc_date": "2019-01-11",
+  "merchant": "SOON HUAT MACHINERY ENTERPRISE",
+  "total_amount": 327.0,
+  "currency": null,
+  "payment_method": "cash",
+  "notes": null,
+  "confidence": 0.95,
+  "uncertain_fields": [],
+  "language_hint": "en"
+}

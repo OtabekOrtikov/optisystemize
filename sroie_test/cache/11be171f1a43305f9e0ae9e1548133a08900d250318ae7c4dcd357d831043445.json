@@ -1,0 +1,12 @@
+{
+  "doc_type": "invoice",
+  "doc_date": "2018-02-20",
+  "merchant": "PERNIAGAAN ZHENG HUI",
+  "total_amount": 112.48,
+  "currency": "RM",
+  "payment_method": "cash",
+  "notes": "GOODS SOLD ARE NOT RETURNABLE.\nTHANK YOU.",
+  "confidence": 0.9,
+  "uncertain_fields": [],
+  "language_hint": "en"
+}
