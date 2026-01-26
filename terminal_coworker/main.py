@@ -167,7 +167,7 @@ def organize(
         })
 
     # --- 4. EXPORT (Excel) ---
-    out_path = project_path / "outputs" / "master.xlsx"
+    out_path = project_path / "master.xlsx"
     export.generate_master_excel(project_path, out_path)
     
     typer.echo(f"✨ DONE! Report: {out_path}")
