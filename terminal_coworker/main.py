@@ -40,7 +40,7 @@ def organize(
     
     # --- 0. АВТОМАТИЧЕСКАЯ ПОДГОТОВКА (Магия) ---
     # Создаем структуру, если её нет
-    dirs = ["inbox", "files", "cache", "outputs"]
+    dirs = ["inbox", "files", "cache"]
     for d in dirs:
         (project_path / d).mkdir(parents=True, exist_ok=True)
     
