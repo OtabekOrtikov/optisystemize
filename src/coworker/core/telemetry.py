@@ -13,6 +13,8 @@ class RunMetrics(BaseModel):
     end_time: float = 0.0
     total_files: int = 0
     processed_files: int = 0
+    cached_skips: int = 0 # Files served from cache
+    requests_total: int = 0 # Actual Gemini API calls
     errors: int = 0
     review_needed: int = 0
     
@@ -59,10 +61,29 @@ class Telemetry:
             if extracted_data.is_review_needed:
                 self.metrics.review_needed += 1
             
-            self.metrics.total_ai_time += extracted_data.processing_time
-            if extracted_data.token_usage:
-                self.metrics.total_tokens_input += extracted_data.token_usage.get("prompt_tokens", 0)
-                self.metrics.total_tokens_output += extracted_data.token_usage.get("candidates_tokens", 0)
+            # Check for cache flag - assumes model has _is_cached
+            is_cached = getattr(extracted_data, "_is_cached", False)
+            
+            if is_cached:
+                self.metrics.cached_skips += 1
+                # Do NOT add tokens or AI time for cached files
+            else:
+                self.metrics.processed_files += 1 # Only count freshly processed here? Or Total Processed = Cached + Fresh?
+                # User said: "Files Processed 9/9... but taken from cache".
+                # Let's keep processed_files as total SUCCESSFUL extractions (cached or fresh).
+                # But separate Requests.
+                self.metrics.requests_total += 1
+                self.metrics.total_ai_time += extracted_data.processing_time
+                if extracted_data.token_usage:
+                    self.metrics.total_tokens_input += extracted_data.token_usage.get("prompt_tokens", 0)
+                    self.metrics.total_tokens_output += extracted_data.token_usage.get("candidates_tokens", 0)
+        else:
+             # Non-extracted result? Or just file move? 
+             # For ingest, we call log_file_processed? No, ingest is part of Total Files.
+             # This method is called after organize/extract.
+             # Let's assume if extracted_data is None it's just a count.
+             self.metrics.processed_files += 1 # Fallback behavior
+             pass
 
     def save(self):
         self.metrics.end_time = time.time()

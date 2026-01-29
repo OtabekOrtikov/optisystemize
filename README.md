@@ -1,116 +1,121 @@
 # 🤖 Coworker AI v2.1
 
-**Your intelligent document organization assistant.**
-Turn a chaotic folder of receipts, invoices, and contracts into a structured archive with a single command.
+**Ваш умный ассистент для организации документов.**
+Превратите хаос из чеков, счетов и договоров в структурированный архив одной командой.
 
-## ✨ Features
+## ✨ Возможности
 
-- **Interactive Setup**: Simple wizard to configure how you want your files organized.
-- **Smart Organization**: Automatically sorts files by Date and Category.
-- **AI-Powered**: Uses Google Gemini to read PDFs and Images (Scan/Receipts).
-- **Safe by Default**: Files are moved to `Organized/`, but originals are backed up in `.coworker/trash/`.
-- **Quality Control**: "Review" folder + CSV report for low-confidence or ambiguous documents.
-- **Master Report**: Generates a clean Excel report (`master.xlsx`).
-- **Telemetry**: Tracks costs (tokens) and processing time.
+- **Интерактивная Настройка**: Простой мастер настройки для выбора способа организации.
+- **Умная Сортировка**: Автоматически сортирует файлы по Дате и Категории.
+- **ИИ-Ядро**: Использует Google Gemini для чтения PDF и фото (Сканы/Чеки).
+- **Безопасность**: Файлы перемещаются в `Organized/`, но оригиналы сохраняются в `.coworker/trash/`.
+- **Контроль Качества**: Папка "Review" + CSV отчет для спорных документов.
+- **Master Отчет**: Генерирует чистый Excel отчет (`master.xlsx`) на русском языке.
+- **Телеметрия**: Отслеживает затраты (токены) и время обработки.
 
-## 🚀 Quick Start
+## 🚀 Быстрый Старт
 
-### 1. Install
+### 1. Установка
 
-Install globally with `pipx` (recommended) or `pip`:
+Установите глобально через `pipx` (рекомендуется) или `pip`:
 
 ```bash
 pipx install .
 ```
 
-### 2. Configure API Key
+### 2. Настройка API Ключа
 
-Get your key from [Google AI Studio](https://aistudio.google.com/).
+Получите ключ в [Google AI Studio](https://aistudio.google.com/).
 
 ```bash
-export GEMINI_API_KEY="your_api_key_here"
+export GEMINI_API_KEY="ваш_api_ключ"
 ```
 
-### 3. Quick Run (Zero Setup)
+### 3. Быстрый Запуск (Без настройки)
 
-Just cd into any folder with receipts and run:
+Просто перейдите в папку с чеками и запустите:
 
 ```bash
 cd my_receipts_folder
 coworker run
 ```
 
-Coworker will:
+Что сделает Coworker:
 
-- Auto-initialize (hidden `.coworker` folder).
-- **Move** files into `Organized/` (Safe Move).
-- Place ambiguous files in `Review/`.
-- Generate `master.xlsx` and `Review/review.csv`.
+- Создаст скрытую папку `.coworker`.
+- **Переместит** файлы в `Organized/` (Безопасное перемещение).
+- Спорные файлы положит в `Review/`.
+- Создаст `master.xlsx` и `Review/review.csv`.
 
-**Mistake?** Run `coworker undo` to restore files.
+**Ошибка?** Запустите `coworker undo` для отмены.
 
-### 4. Advanced Setup (Optional)
+### 4. Продвинутая настройка (Опционально)
 
-If you want a dedicated workspace with an `Inbox/` folder:
+Если хотите отдельную рабочую область с папкой `Inbox/`:
 
 ```bash
-# Create the workspace
+# Создать рабочую область
 coworker init my_money
 
-# Run the setup wizard
+# Запустить мастер настройки
 cd my_money
 coworker setup
 
-# Drop files in Inbox/ and run
+# Положить файлы в Inbox/ и запустить
 coworker run
 ```
 
-### 5. Run!
+### 5. Запуск!
 
-1.  Put your **Messy Files** inside the `Inbox/` folder (or current folder for ad-hoc).
-2.  Run the magic command:
+1.  Положите **Файлы** в папку `Inbox/` (или текущую, если без init).
+2.  Запустите магическую команду:
     ```bash
     coworker run
     ```
-3.  Enjoy the results:
-    - `Organized/`: Clean, renamed files.
-    - `Review/`: Files that need your attention.
-    - `master.xlsx`: Your financial summary.
+3.  Наслаждайтесь результатом:
+    - `Organized/`: Чистые, переименованные файлы.
+    - `Review/`: Файлы, требующие внимания.
+    - `master.xlsx`: Ваш финансовый отчет.
 
-## 📂 Structure
+## 📂 Структура
 
-Ad-hoc workspace (default):
+Ad-hoc режим (по умолчанию):
 
 ```text
 my_folder/
-├── Organized/       <-- CLEAN RESULTS (YYYY-MM/Category/...)
-├── Review/          <-- CHECK THESE
-│   └── review.csv   <-- REASONS (CSV)
-└── master.xlsx      <-- EXCEL REPORT
+├── Organized/       <-- РЕЗУЛЬТАТ (YYYY-MM/Категория/...)
+├── Review/          <-- НА ПРОВЕРКУ
+│   └── review.csv   <-- ПРИЧИНЫ (CSV)
+└── master.xlsx      <-- EXCEL ОТЧЕТ
 ```
 
-_(System files like backups, config, cache, and logs are hidden in `.coworker/`)_
+## 🛠 Команды
 
-## 🛠 Command Reference
-
-| Command                | Usage Scenario      | Description                                                                 |
-| :--------------------- | :------------------ | :-------------------------------------------------------------------------- |
-| **`coworker run`**     | **Daily Use**       | **The main command.** Runs in current folder. **MOVES** files by default.   |
-| `coworker undo`        | **Recovery**        | **Restores files** from the last run to their original locations.           |
-| `coworker run --safe`  | **Testing**         | Runs in copy mode (keeps originals in place).                               |
-| `coworker run --dev`   | **Debug**           | Includes technical columns (tokens, hash) and system stats in Excel.        |
-| `coworker init <path>` | **New Project**     | Creates a dedicated workspace structure with an explicit `Inbox/`.          |
-| `coworker setup`       | **Configuration**   | Runs the interactive wizard to customize categories and folder preferences. |
-| `coworker status`      | **Monitoring**      | View total files processed, tokens used, and estimated costs.               |
-| `coworker doctor`      | **Troubleshooting** | Checks if your API key is set and dependencies are healthy.                 |
+| Команда                  | Когда использовать | Описание                                                                   |
+| :----------------------- | :----------------- | :------------------------------------------------------------------------- |
+| **`coworker run`**       | **Ежедневно**      | **Главная команда.** Запускает обработку. **Перемещает** файлы.            |
+| `coworker undo`          | **Восстановление** | **Вернуть файлы** как было до последнего запуска.                          |
+| `coworker run --safe`    | **Тест**           | Режим копирования (оставляет оригиналы на месте).                          |
+| `coworker run --dev`     | **Отладка**        | Включает технические столбцы (токены, хеш) и системную статистику в Excel. |
+| `coworker run --lang en` | **Язык**           | Запуск на английском языке.                                                |
+| `coworker init <path>`   | **Новый проект**   | Создает структуру с папкой `Inbox/`.                                       |
+| `coworker setup`         | **Настройка**      | Мастер настройки категорий и папок.                                        |
+| `coworker status`        | **Мониторинг**     | Показать статистику, токены и расходы.                                     |
+| `coworker doctor`        | **Проверка**       | Проверить API ключ и зависимости.                                          |
 
 ## ❓ FAQ
 
-**Q: What if the AI makes a mistake?**
-A: Files with low confidence (< 70%) or missing dates/amounts are automatically moved to `Review/` folder. Check `Review/review.csv` for reasons. You can rename them and move them to `Organized/` manually.
+**В: А если ИИ ошибется?**
+О: Файлы с низкой уверенностью (< 70%) или без даты/суммы попадают в `Review/`. Причина указана в `Review/review.csv`. Вы можете переименовать их и перенести вручную.
 
-**Q: Is it safe?**
-A: Yes. `coworker run` defaults to a **safe move**: originals are backed up in `.coworker/trash/` before moving. You can restore them instantly with `coworker undo`.
+**В: Это безопасно?**
+О: Да. По умолчанию создается резервная копия оригиналов в `.coworker/trash/`. Вы можете вернуть всё назад командой `coworker undo`.
 
-**Q: How do I change settings?**
-A: Run `coworker setup` again, or edit `.coworker/config.yml` directly.
+**В: Как сменить язык?**
+О: По умолчанию используется Русский.
+
+- Разово: `coworker run --lang en`
+- Навсегда: В файле `.coworker/config.yml` установите `lang: en`.
+
+**В: Как изменить настройки?**
+О: Запустите `coworker setup` снова или отредактируйте `.coworker/config.yml`.

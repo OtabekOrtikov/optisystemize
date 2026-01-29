@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 
 class FileStatus(str, Enum):
     NEW = "new"
@@ -22,6 +22,7 @@ class CategoriesMode(str, Enum):
     CUSTOM = "custom"
 
 class Config(BaseModel):
+    lang: Optional[str] = None # ru or en
     organization_mode: OrganizationMode = OrganizationMode.BOTH
     categories_mode: CategoriesMode = CategoriesMode.AUTO
     max_categories: int = 12
@@ -61,4 +62,6 @@ class ExtractedData(BaseModel):
     processing_time: float = Field(default=0.0, description="Time taken to process in seconds")
     token_usage: Dict[str, int] = Field(default_factory=dict, description="Token usage details")
     
+    _is_cached: bool = PrivateAttr(default=False)
+
     model_config = ConfigDict(extra='forbid')

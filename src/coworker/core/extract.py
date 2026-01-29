@@ -42,7 +42,9 @@ class Extractor:
             try:
                 with open(cache_path, 'r') as f:
                     data = json.load(f)
-                return ExtractedData(**data)
+                obj = ExtractedData(**data)
+                obj._is_cached = True
+                return obj
             except Exception:
                 pass # Invalid cache, re-process
 

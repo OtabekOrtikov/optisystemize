@@ -4,6 +4,7 @@ from pathlib import Path
 from rich.console import Console # Added for consistent logging if needed
 from .storage import Workspace
 from .models import ExtractedData
+from .i18n import t
 
 console = Console()
 import json
@@ -27,32 +28,25 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
                 extracted = ExtractedData(**data)
                 
                 # Base User Columns
+                # Base User Columns
                 row = {
-                    "Date": extracted.doc_date,
-                    "Category": extracted.doc_type, # Using doc_type as category for now
-                    "Merchant": extracted.merchant,
-                    "Amount": extracted.total_amount,
-                    "Currency": extracted.currency,
-                    "Summary": extracted.summary,
-                    "Source File": extracted.lines[0].description if extracted.lines and len(extracted.lines)==1 and not extracted.merchant else "Unknown", # Wait, logic for source file name?
-                    # Actually data doesn't have original filename here easily unless we look at manifest or store it.
-                    # We stored hash in filename, but original name is lost in ExtractedData model.
-                    # cache_file.stem is hash.
-                    # For now, let's use hash or skip "Source File" logic if complex.
-                    # The user asked for "Source File (nice name)". 
-                    # We don't have it in ExtractedData. 
-                    # We can try to find it from manifest if we want perfection, but that's slow.
-                    # Let's stick to what we have or "view" it.
-                    "Notes": extracted.review_reason if extracted.is_review_needed else ""
+                    t('export.cols.date'): extracted.doc_date,
+                    t('export.cols.category'): extracted.doc_type, 
+                    t('export.cols.merchant'): extracted.merchant,
+                    t('export.cols.amount'): extracted.total_amount,
+                    t('export.cols.currency'): extracted.currency,
+                    t('export.cols.summary'): extracted.summary,
+                    t('export.cols.notes'): extracted.review_reason if extracted.is_review_needed else ""
                 }
                 
                 # Add Dev columns
+                # Add Dev columns
                 if dev_mode:
                     row.update({
-                        "Hash": cache_file.stem,
-                        "Confidence": extracted.confidence,
-                        "Processing Time (s)": extracted.processing_time,
-                        "Tokens": extracted.token_usage.get("total_tokens", 0)
+                        t('export.cols.hash'): cache_file.stem,
+                        t('export.cols.confidence'): extracted.confidence,
+                        t('export.cols.time'): extracted.processing_time,
+                        t('export.cols.tokens'): extracted.token_usage.get("total_tokens", 0)
                     })
                 
                 # In user mode, we skip these
@@ -67,10 +61,23 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
     df = pd.DataFrame(rows)
     
     # Reorder columns for user friendliness
-    user_cols = ["Date", "Category", "Merchant", "Amount", "Currency", "Summary", "Notes"]
-    user_cols = ["Date", "Category", "Merchant", "Amount", "Currency", "Summary", "Notes"]
+    # Reorder columns for user friendliness
+    user_cols = [
+        t('export.cols.date'), 
+        t('export.cols.category'), 
+        t('export.cols.merchant'), 
+        t('export.cols.amount'), 
+        t('export.cols.currency'), 
+        t('export.cols.summary'), 
+        t('export.cols.notes')
+    ]
     if dev_mode:
-        cols = user_cols + ["Hash", "Confidence", "Processing Time (s)", "Tokens"]
+        cols = user_cols + [
+            t('export.cols.hash'), 
+            t('export.cols.confidence'), 
+            t('export.cols.time'), 
+            t('export.cols.tokens')
+        ]
     else:
         # Remove technical columns from user view
         cols = user_cols
@@ -83,34 +90,39 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
     with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
         
         # Sheet 1: All Documents
-        df.to_excel(writer, sheet_name="All Documents", index=False)
+        df.to_excel(writer, sheet_name=t('export.sheets.all_docs'), index=False)
         
         # Sheet 2: Monthly Breakdown (requires Date)
         # Convert Date to datetime for grouping
+        col_date = t('export.cols.date')
+        col_cat = t('export.cols.category')
+        col_amt = t('export.cols.amount')
+        
         df_dates = df.copy()
-        df_dates['Date'] = pd.to_datetime(df_dates['Date'], errors='coerce')
-        if not df_dates['Date'].isna().all():
-            df_dates['Month'] = df_dates['Date'].dt.to_period('M')
+        df_dates[col_date] = pd.to_datetime(df_dates[col_date], errors='coerce')
+        if not df_dates[col_date].isna().all():
+            df_dates['Month'] = df_dates[col_date].dt.to_period('M')
             # Pivot table: Rows=Month, Cols=Category, Vals=Amount
-            monthly = df_dates.groupby(['Month', 'Category'])['Amount'].sum().unstack(fill_value=0)
-            monthly.to_excel(writer, sheet_name="Monthly Summary")
+            monthly = df_dates.groupby(['Month', col_cat])[col_amt].sum().unstack(fill_value=0)
+            monthly.to_excel(writer, sheet_name=t('export.sheets.monthly'))
 
         # Sheet 3: Review Needed
-        if "Notes" in df.columns:
-            review_df = df[df['Notes'] != ""]
+        col_notes = t('export.cols.notes')
+        if col_notes in df.columns:
+            review_df = df[df[col_notes] != ""]
             if not review_df.empty:
-                review_sheet_cols = ["Date", "Merchant", "Amount", "Notes"]
-                if dev_mode: review_sheet_cols.append("Hash")
+                review_sheet_cols = [t('export.cols.date'), t('export.cols.merchant'), t('export.cols.amount'), col_notes]
+                if dev_mode: review_sheet_cols.append(t('export.cols.hash'))
                 # Ensure cols exist
                 avail_review = [c for c in review_sheet_cols if c in df.columns]
-                review_df[avail_review].to_excel(writer, sheet_name="Review Needed", index=False)
+                review_df[avail_review].to_excel(writer, sheet_name=t('export.sheets.review'), index=False)
             
         # Sheet 4: Performance (Dev Only)
         if dev_mode:
-            perf_df = df[['Hash', 'Processing Time (s)', 'Tokens', 'Confidence']]
-            perf_df.to_excel(writer, sheet_name="System Stats", index=False)
+            perf_df = df[[t('export.cols.hash'), t('export.cols.time'), t('export.cols.tokens'), t('export.cols.confidence')]]
+            perf_df.to_excel(writer, sheet_name=t('export.sheets.system'), index=False)
         
-    console.print(f"Exported master report to {output_path}")
+    console.print(t('cli.run.paths.spreadsheet', path=output_path))
 
 def generate_review_csv(workspace: Workspace):
     """Generates a CSV for files needing review."""
@@ -125,9 +137,9 @@ def generate_review_csv(workspace: Workspace):
                 
                 if extracted.is_review_needed:
                     rows.append({
-                        "file_name": cache_file.stem, # Using hash/stem as we don't have original filename here easily
-                        "reason": extracted.review_reason or "Unknown",
-                        "suggested_action": "Check and Rename"
+                        t('export.cols.file_name'): cache_file.stem, 
+                        t('export.cols.reason'): extracted.review_reason or "Unknown",
+                        t('export.cols.action'): "Check and Rename"
                     })
         except:
             continue
