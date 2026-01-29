@@ -3,6 +3,7 @@ import asyncio
 import json
 import shutil
 import time
+import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
@@ -87,6 +88,63 @@ def status(path: Path = typer.Option(None, help="Workspace path")):
     
     console.print(table)
 
+@app.command()
+def undo(
+    run_id: str = typer.Argument(None, help="Specific Run ID to undo (defaults to latest)"),
+    path: Path = typer.Option(None, help="Workspace path")
+):
+    """Refuses the last run (restores files from trash)."""
+    ws = storage.get_workspace(path or Path.cwd())
+    trash_root = ws.system / "trash"
+    
+    if not trash_root.exists():
+        console.print("[red]❌ No trash/history found to undo.[/red]")
+        raise typer.Exit(1)
+        
+    # Find run to undo
+    if not run_id:
+        # Get latest directory in trash
+        runs = sorted([d for d in trash_root.iterdir() if d.is_dir()], key=lambda d: d.name, reverse=True)
+        if not runs:
+            console.print("[red]❌ No previous runs found in trash.[/red]")
+            raise typer.Exit(1)
+        target_run_dir = runs[0]
+        run_id = target_run_dir.name
+    else:
+        target_run_dir = trash_root / run_id
+        if not target_run_dir.exists():
+            console.print(f"[red]❌ Run ID '{run_id}' not found in trash.[/red]")
+            raise typer.Exit(1)
+            
+    console.print(f"[yellow]Undoing run: {run_id}[/yellow]")
+    
+    # Iterate and restore
+    restored_count = 0
+    # Walk safely
+    for root, dirs, files in os.walk(target_run_dir):
+        for file in files:
+            src_path = Path(root) / file
+            # Relative path from run dir
+            rel_path = src_path.relative_to(target_run_dir)
+            
+            # Destination: Workspace Root + Rel Path
+            dest_path = ws.root / rel_path
+            
+            # Ensure parent
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Move back (restore)
+            shutil.move(src_path, dest_path)
+            
+            # Log
+            _log_manifest(ws, "undo", "N/A", str(src_path), "restored", dst=str(dest_path))
+            console.print(f"  Restored: {rel_path}")
+            restored_count += 1
+            
+    # Clean up empty run dir
+    shutil.rmtree(target_run_dir)
+    console.print(f"[green]✅ Undo complete. Restored {restored_count} files.[/green]")
+
 
 @app.command()
 def run(
@@ -138,12 +196,9 @@ def run(
              raise typer.Exit(1)
              
         # Initialize ad-hoc
-        # Warning for first-time ad-hoc move
-        if mode == "move":
-            console.print(Panel("[bold yellow]⚠️  First run: Default is MOVE[/bold yellow]\nOriginal files will be moved to 'Organized/'.\nUse [bold cyan]--safe[/bold cyan] or [bold cyan]--mode copy[/bold cyan] to keep originals.", title="Warning"))
-            if not typer.confirm("Continue?", default=True):
-                 raise typer.Exit(1)
-
+        # Warning for first-time ad-hoc move (Simplified for v2.1)
+        # Default is now move, which is safe.
+        
         console.print(f"[yellow]⚠️  No workspace found, initializing Ad-hoc mode in: {ws.root}[/yellow]")
         ws.ensure_system_only()
         # Create output folders dynamically
@@ -247,7 +302,12 @@ def run(
         if not res: continue
         f_hash, f_path = files_to_process[idx]
         
-        org_res = organize.organize_file(f_path, res, ws, f_hash, dry_run=dry_run, mode=mode)
+        # Prepare trash dir for safe move
+        trash_dir = None
+        if mode == "move":
+            trash_dir = ws.system / "trash" / tm.run_id
+            
+        org_res = organize.organize_file(f_path, res, ws, f_hash, dry_run=dry_run, mode=mode, trash_dir=trash_dir)
         
         _log_manifest(ws, "organize", f_hash, str(f_path), org_res['status'], dst=org_res.get('dst'))
         if org_res['status'] == FileStatus.ORGANIZED:
@@ -267,6 +327,11 @@ def run(
         export_path = ws.exports / "master.xlsx"
         
     export.generate_master_excel(ws, export_path, dev_mode=dev)
+    
+    # 4.1 Review CSV
+    console.print("5️⃣  Generating Review CSV...")
+    export.generate_review_csv(ws)
+    
     tm.end_stage("export")
     
     tm.end_stage("total")
@@ -288,7 +353,16 @@ def run(
     
     console.print(table)
     console.print(f"[dim]Run ID: {tm.run_id}[/dim]")
-    console.print(f"[green]Done! Check '{export_path}'[/green]")
+    
+    # Summary of paths
+    console.print(f"Organized: {organized_count} → Organized/")
+    console.print(f"Spreadsheet: {export_path}")
+    console.print(f"Review: {m.review_needed} → Review/")
+    
+    if mode == "move":
+         console.print(f"[yellow]Undo: coworker undo {tm.run_id}[/yellow]")
+         
+    console.print(f"[green]Done![/green]")
 
 def _log_manifest(ws, event, f_hash, src, status, dst=None):
     entry = ManifestEntry(

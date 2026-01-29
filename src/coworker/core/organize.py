@@ -22,9 +22,10 @@ def organize_file(
     src_path: Path, 
     data: ExtractedData, 
     workspace: Workspace,
-    f_hash: str,
+     f_hash: str,
     dry_run: bool = False,
-    mode: str = "copy"
+    mode: str = "copy",
+    trash_dir: Path = None
 ) -> Dict[str, Any]:
     
     # 1. Determine Category
@@ -83,6 +84,23 @@ def organize_file(
              counter += 1
              
         if mode == "move":
+            # SAFE MOVE: Backup to trash first
+            if trash_dir:
+                # We need to preserve original structure in trash relative to workspace root?
+                # Or just flat file with unique name?
+                # Requirement: "preserve originals in .coworker/trash/<run_id>/ (full structure)"
+                # src_path is absolute. we need relative to workspace root if possible.
+                
+                try:
+                    rel_path = src_path.relative_to(workspace.root)
+                    backup_path = trash_dir / rel_path
+                except ValueError:
+                    # File outside workspace? Just flat backup then.
+                    backup_path = trash_dir / src_path.name
+                
+                backup_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_path, backup_path)
+            
             shutil.move(src_path, dest_path)
         else:
             shutil.copy2(src_path, dest_path)

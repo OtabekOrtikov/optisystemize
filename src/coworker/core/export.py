@@ -1,6 +1,13 @@
 import pandas as pd
 import json
 from pathlib import Path
+from rich.console import Console # Added for consistent logging if needed
+from .storage import Workspace
+from .models import ExtractedData
+
+console = Console()
+import json
+from pathlib import Path
 from .storage import Workspace
 from .models import ExtractedData
 
@@ -47,6 +54,8 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
                         "Processing Time (s)": extracted.processing_time,
                         "Tokens": extracted.token_usage.get("total_tokens", 0)
                     })
+                
+                # In user mode, we skip these
                     
                 rows.append(row)
         except:
@@ -59,9 +68,11 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
     
     # Reorder columns for user friendliness
     user_cols = ["Date", "Category", "Merchant", "Amount", "Currency", "Summary", "Notes"]
+    user_cols = ["Date", "Category", "Merchant", "Amount", "Currency", "Summary", "Notes"]
     if dev_mode:
         cols = user_cols + ["Hash", "Confidence", "Processing Time (s)", "Tokens"]
     else:
+        # Remove technical columns from user view
         cols = user_cols
         
     # Filter/Order available columns
@@ -99,4 +110,30 @@ def generate_master_excel(workspace: Workspace, output_path: Path, dev_mode: boo
             perf_df = df[['Hash', 'Processing Time (s)', 'Tokens', 'Confidence']]
             perf_df.to_excel(writer, sheet_name="System Stats", index=False)
         
-    print(f"Exported master report to {output_path}")
+    console.print(f"Exported master report to {output_path}")
+
+def generate_review_csv(workspace: Workspace):
+    """Generates a CSV for files needing review."""
+    output_path = workspace.review / "review.csv"
+    
+    rows = []
+    for cache_file in workspace.cache.glob("*.json"):
+        try:
+            with open(cache_file, 'r') as f:
+                data = json.load(f)
+                extracted = ExtractedData(**data)
+                
+                if extracted.is_review_needed:
+                    rows.append({
+                        "file_name": cache_file.stem, # Using hash/stem as we don't have original filename here easily
+                        "reason": extracted.review_reason or "Unknown",
+                        "suggested_action": "Check and Rename"
+                    })
+        except:
+            continue
+            
+    if rows:
+        df = pd.DataFrame(rows)
+        df.to_csv(output_path, index=False)
+        # console.print handled in cli or we can print here
+

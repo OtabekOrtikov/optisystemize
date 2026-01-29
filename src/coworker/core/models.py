@@ -44,11 +44,11 @@ class LineItem(BaseModel):
 
 class ExtractedData(BaseModel):
     doc_type: str = Field(description="One of: Receipt, Invoice, Statement, Contract, Other")
-    doc_date: Optional[str] = Field(description="YYYY-MM-DD format if found")
-    merchant: Optional[str] = Field(description="Name of vendor/sender")
-    total_amount: Optional[float] = Field(description="Total amount")
-    currency: Optional[str] = Field(description="Currency code: USD, UZS, EUR, RUB, etc.")
-    summary: Optional[str] = Field(description="Brief summary of content")
+    doc_date: Optional[str] = Field(default=None, description="YYYY-MM-DD format if found")
+    merchant: Optional[str] = Field(default=None, description="Name of vendor/sender")
+    total_amount: Optional[float] = Field(default=None, description="Total amount")
+    currency: Optional[str] = Field(default=None, description="Currency code: USD, UZS, EUR, RUB, etc.")
+    summary: Optional[str] = Field(default=None, description="Brief summary of content")
     lines: Optional[List[LineItem]] = Field(description="Line items if applicable", default=[])
     
     # Meta
