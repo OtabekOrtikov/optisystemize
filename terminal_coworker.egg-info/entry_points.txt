@@ -1,2 +1,0 @@
-[console_scripts]
-optisystemize = terminal_coworker.main:app

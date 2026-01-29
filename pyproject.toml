@@ -1,28 +1,38 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "terminal_coworker"
+name = "coworker"
 version = "0.1.0"
-description = "AI Accountant for your Terminal"
-requires-python = ">=3.10"
+description = "Your personal AI documentation assistant"
+authors = [
+  { name = "Optimatrix", email = "info@optimatrix.uz" },
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "typer[all]",
+    "pydantic>=2.0",
     "google-genai",
-    "pydantic",
     "pandas",
     "openpyxl",
     "pillow",
-    "opencv-python",
     "python-dotenv",
-    "pyyaml",
-    "tqdm"
+    "tqdm",
+    "pyyaml"
 ]
 
-[project.scripts]
-optisystemize = "terminal_coworker.main:app"
+[project.urls]
+"Homepage" = "https://github.com/OtabekOrtikov/optisystemize"
 
-# --- ИСПРАВЛЕНИЕ: Явно указываем, где лежит код ---
-[tool.setuptools]
-packages = ["terminal_coworker"]
+[project.scripts]
+coworker = "coworker.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
