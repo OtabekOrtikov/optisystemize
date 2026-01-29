@@ -6,13 +6,13 @@ class Workspace:
     def __init__(self, root: Path):
         self.root = root.absolute()
         
-        # User facing folders
+        
         self.inbox = self.root / "Inbox"
         self.organized = self.root / "Organized"
         self.exports = self.root / "Exports"
         self.review = self.root / "Review"
         
-        # System folders
+        
         self.system = self.root / ".coworker"
         self.cache = self.system / "cache"
         self.logs = self.system / "logs"
@@ -47,8 +47,8 @@ def get_workspace(path: Optional[Path] = None) -> Workspace:
     
     ws = Workspace(path)
     if not ws.is_valid():
-        # Maybe the user calls it from inside a workspace?
-        # Try parent? For now, keep it strict. 
-        # If folder structure doesn't exist, we might be in 'init' phase or incorrect usage.
+        
+        
+        
         pass 
     return ws

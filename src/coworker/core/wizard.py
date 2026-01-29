@@ -3,7 +3,7 @@ import yaml
 from rich.prompt import Prompt, Confirm
 from rich.console import Console
 from rich.panel import Panel
-from . import config # Need config to access current language for persistence
+from . import config 
 
 from .models import Config, OrganizationMode, CategoriesMode
 from .storage import Workspace
@@ -14,7 +14,7 @@ console = Console()
 def run_setup_wizard(workspace: Workspace):
     console.print(Panel.fit(t('cli.setup.title'), style="bold blue"))
     
-    # Step 1: Organization Preference
+    
     console.print(f"\n[bold]{t('cli.setup.step1_title')}[/bold]")
     org_choices = {
         "1": OrganizationMode.FOLDERS,
@@ -29,11 +29,11 @@ def run_setup_wizard(workspace: Workspace):
         show_choices=False
     )
     
-    # Display options helper (since we hid choices)
-    # Actually rich doesn't show custom text for choices easily.
-    # Let's print options manually first?
-    # The original code relied on implicit context.
-    # We should print options:
+    
+    
+    
+    
+    
     console.print(f"1. {t('cli.setup.step1_options.1')}")
     console.print(f"2. {t('cli.setup.step1_options.2')}")
     console.print(f"3. {t('cli.setup.step1_options.3')}")
@@ -46,7 +46,7 @@ def run_setup_wizard(workspace: Workspace):
 
     console.print(f"✅ Selected: [green]{mode.value}[/green]")
 
-    # Step 2: Categories
+    
     console.print(f"\n[bold]{t('cli.setup.step2_title')}[/bold]")
     
     console.print(f"1. {t('cli.setup.step2_options.1')}")
@@ -76,24 +76,24 @@ def run_setup_wizard(workspace: Workspace):
         
     console.print(f"✅ Selected: [green]{cat_mode.value}[/green]")
 
-    # Save
     
-    # We should add lang to config here if we want to persist choice from CLI Setup?
-    # Probably user wants to configure language in wizard too?
-    # Request requirement 3: "Wizard: oba shaga polnostyu na russkom".
-    # Doesn't explicitly say "Add Step 3: Choose Language".
-    # But "Config: .coworker/config.yml: lang: ru".
-    # Let's stay compliant with scope.
+    
+    
+    
+    
+    
+    
+    
     
     config = Config(
         organization_mode=mode,
         categories_mode=cat_mode,
         custom_categories=custom_cats,
-        # Persist current language
+        
         lang=config.settings.i18n.lang 
     )
     
-    # Ensure system dir exists
+    
     workspace.system.mkdir(parents=True, exist_ok=True)
     
     with open(workspace.config_path, "w") as f:

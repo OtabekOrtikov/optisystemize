@@ -22,19 +22,19 @@ def scan_inbox(
     if not inbox_path.exists():
         return
     
-    # Check if inbox_path is the same as root (Ad-hoc mode usually)
-    # If so, we must be careful not to recurse into Organized/ etc.
-    # iterdir() is shallow, so we just need to skip if the item IS one of those dirs
-    # But wait, iterdir() returns files too.
-    # If the user has subfolders in their 'Receipts' folder, we might want to walk them?
-    # The current implementation uses os.walk in v1, but here it uses iterdir() (shallow).
-    # If we want shallow scan (safest for ad-hoc):
+    
+    
+    
+    
+    
+    
+    
     
     for item in inbox_path.iterdir():
-        # Skip hidden/excluded
+        
         if item.name.startswith('.') or item.name in exclude_dirs:
             continue
             
         if item.is_file() and item.suffix.lower() in extensions:
             yield item
-        # If we want recursive later, we'd add logic here. For now shallow is safer for Ad-hoc.
+        

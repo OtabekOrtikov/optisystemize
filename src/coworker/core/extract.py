@@ -37,7 +37,7 @@ class Extractor:
         self.semaphore = asyncio.Semaphore(settings.CONCURRENCY)
 
     async def extract_file(self, file_path: Path, cache_path: Path, force: bool = False) -> Optional[ExtractedData]:
-        # Check cache
+        
         if not force and cache_path.exists():
             try:
                 with open(cache_path, 'r') as f:
@@ -46,17 +46,17 @@ class Extractor:
                 obj._is_cached = True
                 return obj
             except Exception:
-                pass # Invalid cache, re-process
+                pass 
 
         async with self.semaphore:
             try:
                 parts = []
                 
-                # Image Preprocessing (simple contrast enhancement)
+                
                 if file_path.suffix.lower() in {'.jpg', '.jpeg', '.png', '.webp'}:
                     try:
                         with Image.open(file_path) as img:
-                            # 1. Original
+                            
                             img_byte_arr = io.BytesIO()
                             img.save(img_byte_arr, format=img.format)
                             parts.append(types.Part.from_bytes(
@@ -64,8 +64,8 @@ class Extractor:
                                 mime_type=f"image/{img.format.lower()}"
                             ))
                             
-                            # 2. Contrast Enhanced (if user requested "variants")
-                            # We send both to give Gemini "better vision"
+                            
+                            
                             enhancer = ImageEnhance.Contrast(img)
                             img_contrast = enhancer.enhance(1.5)
                             img_byte_arr_c = io.BytesIO()
@@ -75,7 +75,7 @@ class Extractor:
                                 mime_type=f"image/{img.format.lower()}"
                             ))
                     except Exception as e:
-                        # Fallback to simple read if PIL fails
+                        
                         with open(file_path, "rb") as f:
                              parts.append(types.Part.from_bytes(data=f.read(), mime_type="image/jpeg"))
                 
@@ -84,23 +84,23 @@ class Extractor:
                         parts.append(types.Part.from_bytes(data=f.read(), mime_type="application/pdf"))
                 
                 else:
-                    return None # Unsupported
+                    return None 
 
-                # Generate sanitized schema
+                
                 schema = ExtractedData.model_json_schema()
                 def strip_schema(s):
                     if isinstance(s, dict):
-                        # Remove forbidden/internal keys
+                        
                         s.pop('additionalProperties', None)
                         s.pop('title', None)
                         
-                        # Remove specific properties we don't want LLM to worry about
+                        
                         props = s.get('properties', {})
                         if isinstance(props, dict):
                             props.pop('token_usage', None)
                             props.pop('processing_time', None)
                             
-                        # Recurse
+                        
                         for v in s.values():
                             strip_schema(v)
                     elif isinstance(s, list):
@@ -120,7 +120,7 @@ class Extractor:
                 end_time = asyncio.get_event_loop().time()
                 duration = end_time - start_time
                 
-                # Extract usage metadata
+                
                 usage = {}
                 if response.usage_metadata:
                     usage = {
@@ -132,12 +132,12 @@ class Extractor:
                 if not response.text:
                     return None
 
-                # Parse and validate
+                
                 try:
                     data = json.loads(response.text)
                     extracted = ExtractedData(**data)
                 except (json.JSONDecodeError, ValidationError):
-                    # Fallback or error
+                    
                     extracted = ExtractedData(
                         doc_type="Other",
                         summary="Extraction failed to parse",
@@ -150,7 +150,7 @@ class Extractor:
                 extracted.processing_time = duration
                 extracted.token_usage = usage
 
-                # Post-process confidence & Review Logic
+                
                 reasons = []
                 if not extracted.doc_date: reasons.append("Missing Date")
                 if not extracted.total_amount: reasons.append("Missing Amount")
@@ -165,7 +165,7 @@ class Extractor:
                     if not extracted.review_reason:
                         extracted.review_reason = "Low Confidence"
 
-                # Save cache
+                
                 with open(cache_path, 'w') as f:
                     f.write(extracted.model_dump_json(indent=2))
 

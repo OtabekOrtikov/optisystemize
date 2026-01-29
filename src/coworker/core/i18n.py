@@ -3,20 +3,20 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-# Singleton instance
+
 _i18n_instance = None
 
 class I18n:
     def __init__(self):
-        self.lang = "ru" # Default
+        self.lang = "ru" 
         self.translations: Dict[str, Any] = {}
         self.loaded_langs: set = set()
         
-        # Determine paths
-        # Assumes this file is in src/coworker/core/i18n.py -> translations in src/coworker/i18n/
-        # Adjust relative path: ../../coworker/i18n -> ../../i18n if inside core?
-        # current file: src/coworker/core/i18n.py
-        # target dir: src/coworker/i18n/
+        
+        
+        
+        
+        
         self.root_dir = Path(__file__).parent.parent / "i18n"
         
     def set_language(self, lang: str):
@@ -31,7 +31,7 @@ class I18n:
             
         file_path = self.root_dir / f"{lang}.yml"
         if not file_path.exists():
-            # Try to load default if requested missing
+            
             if lang != "ru":
                 self._load_lang("ru")
             return
@@ -48,15 +48,15 @@ class I18n:
     def t(self, key: str, **kwargs) -> str:
         """Get translated string. Supports dots for nested keys e.g. 'cli.welcome'."""
         
-        # Try current lang
+        
         val = self._get_value(self.lang, key)
         
-        # Fallback to RU if not found and current is not RU
+        
         if val is None and self.lang != "ru":
             val = self._get_value("ru", key)
             
         if val is None:
-            return key # Return key if missing
+            return key 
             
         if isinstance(val, str):
             try:

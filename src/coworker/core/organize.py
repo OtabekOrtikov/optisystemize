@@ -8,14 +8,14 @@ from .storage import Workspace
 from .config import settings
 
 def sanitize_filename(name: str) -> str:
-    # Remove invalid chars
+    
     name = re.sub(r'[<>:"/\\|?*]', '', name)
     name = name.strip().replace(' ', '_')
-    return name[:50]  # Limit length
+    return name[:50]  
 
 def get_target_category(doc_type: str, all_categories: Counter, max_categories: int) -> str:
-    # Use categories from extraction, but we can enforce limits here if needed.
-    # For now, just pass through unless custom logic is requested.
+    
+    
     return doc_type
 
 def organize_file(
@@ -28,33 +28,33 @@ def organize_file(
     trash_dir: Path = None
 ) -> Dict[str, Any]:
     
-    # 1. Determine Category
+    
     category = data.doc_type
     
-    # Apply logic based on config settings.config.categories_mode if needed
-    # e.g. mapping "Receipt" to "Business" if mode is BUSINESS
-    # For "Auto", we stick to Gemini's determination.
     
-    # 2. Determine Destination
+    
+    
+    
+    
     if data.is_review_needed:
-        # To Review
+        
         dest_folder = workspace.review
         reason = data.review_reason or "Review"
-        # Sanitize reason for folder name
+        
         reason_folder = sanitize_filename(reason)
         target_dir = dest_folder / reason_folder
     else:
-        # To Organized
+        
         date_folder = "Unknown_Date"
         if data.doc_date:
             try:
-                date_folder = data.doc_date[:7] # YYYY-MM
+                date_folder = data.doc_date[:7] 
             except: pass
         
         target_dir = workspace.organized / date_folder / category
 
-    # 3. Naming Convention
-    # <YYYY-MM-DD>__<Category>__<Merchant>__<Amount><Currency>__<hash>.<ext>
+    
+    
     ext = src_path.suffix
     
     parts = []
@@ -66,7 +66,7 @@ def organize_file(
     curr = data.currency if data.currency else ""
     parts.append(f"{amt}{curr}")
     
-    # Add short hash to ensure uniqueness and traceability
+    
     short_hash = f_hash[:8]
     parts.append(short_hash)
     
@@ -76,7 +76,7 @@ def organize_file(
     if not dry_run:
         target_dir.mkdir(parents=True, exist_ok=True)
         
-        # Collision handling
+        
         dest_path = target_dir / new_name
         counter = 1
         while dest_path.exists():
@@ -84,18 +84,18 @@ def organize_file(
              counter += 1
              
         if mode == "move":
-            # SAFE MOVE: Backup to trash first
+            
             if trash_dir:
-                # We need to preserve original structure in trash relative to workspace root?
-                # Or just flat file with unique name?
-                # Requirement: "preserve originals in .coworker/trash/<run_id>/ (full structure)"
-                # src_path is absolute. we need relative to workspace root if possible.
+                
+                
+                
+                
                 
                 try:
                     rel_path = src_path.relative_to(workspace.root)
                     backup_path = trash_dir / rel_path
                 except ValueError:
-                    # File outside workspace? Just flat backup then.
+                    
                     backup_path = trash_dir / src_path.name
                 
                 backup_path.parent.mkdir(parents=True, exist_ok=True)

@@ -22,7 +22,7 @@ class CategoriesMode(str, Enum):
     CUSTOM = "custom"
 
 class Config(BaseModel):
-    lang: Optional[str] = None # ru or en
+    lang: Optional[str] = None 
     organization_mode: OrganizationMode = OrganizationMode.BOTH
     categories_mode: CategoriesMode = CategoriesMode.AUTO
     max_categories: int = 12
@@ -30,7 +30,7 @@ class Config(BaseModel):
 
 class ManifestEntry(BaseModel):
     ts: str = Field(default_factory=lambda: datetime.now().isoformat())
-    event: str  # ingest, extract, organize
+    event: str  
     hash: str
     src: str
     kind: str = "file"
@@ -52,13 +52,13 @@ class ExtractedData(BaseModel):
     summary: Optional[str] = Field(default=None, description="Brief summary of content")
     lines: Optional[List[LineItem]] = Field(description="Line items if applicable", default=[])
     
-    # Meta
+    
     confidence: float = Field(default=0.0, description="Confidence score 0.0-1.0")
     uncertain_fields: List[str] = Field(default=[], description="List of fields with low confidence")
     is_review_needed: bool = Field(default=False)
     review_reason: Optional[str] = None
     
-    # Metrics
+    
     processing_time: float = Field(default=0.0, description="Time taken to process in seconds")
     token_usage: Dict[str, int] = Field(default_factory=dict, description="Token usage details")
     
