@@ -1,0 +1,2 @@
+{"ts":"2026-01-29T12:15:17.344856","event":"ingest","hash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","src":"/Users/otabekortiqov/Documents/Optimatrix/optisystemize/test_adhoc/receipt.jpg","kind":"file","status":"new","details":null,"dst":null}
+{"ts":"2026-01-29T12:15:18.068779","event":"extract","hash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","src":"/Users/otabekortiqov/Documents/Optimatrix/optisystemize/test_adhoc/receipt.jpg","kind":"file","status":"error","details":null,"dst":null}

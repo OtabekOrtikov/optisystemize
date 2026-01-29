@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 import typer
 
 class Workspace:
@@ -24,6 +25,14 @@ class Workspace:
                   self.system, self.cache, self.logs]:
             p.mkdir(parents=True, exist_ok=True)
         
+        if not self.manifest_path.exists():
+            self.manifest_path.touch()
+
+    def ensure_system_only(self):
+        """Create only system directories for ad-hoc runs."""
+        for p in [self.system, self.cache, self.logs]:
+            p.mkdir(parents=True, exist_ok=True)
+            
         if not self.manifest_path.exists():
             self.manifest_path.touch()
 

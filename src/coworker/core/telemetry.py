@@ -1,0 +1,81 @@
+import json
+import time
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, Any, List
+from pydantic import BaseModel, Field
+
+from .storage import Workspace
+
+class RunMetrics(BaseModel):
+    run_id: str
+    start_time: float
+    end_time: float = 0.0
+    total_files: int = 0
+    processed_files: int = 0
+    errors: int = 0
+    review_needed: int = 0
+    
+    total_tokens_input: int = 0
+    total_tokens_output: int = 0
+    total_ai_time: float = 0.0
+    
+    stage_times: Dict[str, float] = Field(default_factory=dict)
+    
+    @property
+    def duration(self) -> float:
+        return self.end_time - self.start_time
+
+class Telemetry:
+    def __init__(self, workspace: Workspace):
+        self.workspace = workspace
+        self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.metrics = RunMetrics(
+            run_id=self.run_id,
+            start_time=time.time()
+        )
+        
+        # Ensure runs dir exists
+        self.runs_dir = self.workspace.system / "runs"
+        self.runs_dir.mkdir(parents=True, exist_ok=True)
+
+    def start_stage(self, stage_name: str):
+        self.metrics.stage_times[f"{stage_name}_start"] = time.time()
+
+    def end_stage(self, stage_name: str):
+        start = self.metrics.stage_times.get(f"{stage_name}_start")
+        if start:
+            duration = time.time() - start
+            self.metrics.stage_times[stage_name] = duration
+
+    def log_file_processed(self, extracted_data: Any = None, error: bool = False):
+        self.metrics.total_files += 1
+        if error:
+            self.metrics.errors += 1
+            return
+
+        self.metrics.processed_files += 1
+        if extracted_data:
+            if extracted_data.is_review_needed:
+                self.metrics.review_needed += 1
+            
+            self.metrics.total_ai_time += extracted_data.processing_time
+            if extracted_data.token_usage:
+                self.metrics.total_tokens_input += extracted_data.token_usage.get("prompt_tokens", 0)
+                self.metrics.total_tokens_output += extracted_data.token_usage.get("candidates_tokens", 0)
+
+    def save(self):
+        self.metrics.end_time = time.time()
+        
+        # Save individual run
+        run_file = self.runs_dir / f"{self.run_id}.json"
+        
+        # Correct mkdir reuse check
+        if not self.runs_dir.exists():
+            self.runs_dir.mkdir(parents=True, exist_ok=True)
+            
+        with open(run_file, "w") as f:
+            f.write(self.metrics.model_dump_json(indent=2))
+            
+        # Update aggregate metrics (simple append or recalc?)
+        # For now, we rely on individual run files.
