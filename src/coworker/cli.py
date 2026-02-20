@@ -1,6 +1,7 @@
 import typer
 import asyncio
 import json
+import yaml
 import shutil
 import time
 import os
@@ -20,13 +21,39 @@ from .core.i18n import t
 app = typer.Typer(help="AI Coworker: Organize your documents with Gemini.")
 console = Console()
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     lang: str = typer.Option(None, "--lang", help="Language (ru|en)")
 ):
     """Global configuration."""
     if lang:
          config.settings.set_cli_language(lang)
+
+    # If no subcommand was given and --lang was passed, persist it and exit
+    if ctx.invoked_subcommand is None:
+        if lang:
+            # Persist lang to .coworker/config.yml in current directory
+            ws = storage.get_workspace(Path.cwd())
+            ws.ensure_system_only() if not ws.is_valid() else None
+            config_path = ws.config_path
+            # Load existing config or start fresh
+            data = {}
+            if config_path.exists():
+                try:
+                    with open(config_path, 'r') as f:
+                        data = yaml.safe_load(f) or {}
+                except Exception:
+                    pass
+            data['lang'] = lang
+            with open(config_path, 'w') as f:
+                yaml.safe_dump(data, f, allow_unicode=True)
+            console.print(f"[green]✓ lang changed to {lang}[/green]")
+            raise typer.Exit(0)
+        else:
+            # No lang and no command — show help
+            console.print(ctx.get_help())
+            raise typer.Exit(0)
 
 @app.command()
 def init(path: Path = typer.Argument(Path("."), help="Where to create the workspace")):

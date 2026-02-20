@@ -18,7 +18,7 @@ class Config(BaseModel):
 
 class Settings:
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
-    CONCURRENCY: int = int(os.getenv("COWORKER_CONCURRENCY", "5"))
+    CONCURRENCY: int = int(os.getenv("COWORKER_CONCURRENCY", "3"))
     MODEL_NAME: str = os.getenv("COWORKER_MODEL", "gemini-2.0-flash")
     
     config: Config = Config()

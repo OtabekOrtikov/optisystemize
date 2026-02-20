@@ -5,8 +5,9 @@ import time
 from pathlib import Path
 from typing import Optional, List
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 from pydantic import ValidationError
+import random
 from PIL import Image, ImageEnhance
 
 from .config import settings
@@ -109,14 +110,37 @@ class Extractor:
                 strip_schema(schema)
 
                 start_time = asyncio.get_event_loop().time()
-                response = await self.client.aio.models.generate_content(
-                    model=settings.MODEL_NAME,
-                    contents=parts + [PROMPT],
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        response_schema=schema
-                    )
-                )
+                
+                # Retry logic for 429 RESOURCE_EXHAUSTED
+                max_retries = 5
+                base_delay = 2.0
+                response = None
+                
+                for attempt in range(max_retries):
+                    try:
+                        response = await self.client.aio.models.generate_content(
+                            model=settings.MODEL_NAME,
+                            contents=parts + [PROMPT],
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                response_schema=schema
+                            )
+                        )
+                        break # Success
+                    except errors.ClientError as e:
+                        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                            if attempt == max_retries - 1:
+                                raise # exhaustive
+                            
+                            delay = (base_delay * (2 ** attempt)) + (random.random() * 0.5)
+                            print(f"[yellow]Rate limit hit for {file_path.name}. Retrying in {delay:.2f}s...[/yellow]")
+                            await asyncio.sleep(delay)
+                        else:
+                            raise e
+
+                if not response:
+                    raise Exception("Failed to get response after retries")
+
                 end_time = asyncio.get_event_loop().time()
                 duration = end_time - start_time
                 
